@@ -1,0 +1,105 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@using System.Diagnostics
+@using Avito2.Abstract
+@using Avito2.BlazorServices
+@using Avito2.Data.Repositories
+@using Avito2.Domains
+@using Avito2.Users
+@using Microsoft.AspNetCore.Http.Connections
+@using Microsoft.AspNetCore.Identity
+@inject NavigationManager navigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject IRepository<Advertisement> AdvertisementRepository
+@inject MessageService MessageService
+@inject IJSRuntime JS
+<div class='dialog-window__messages'>
+        @foreach (var item in @Messages)
+        {
+            var mStyle = string.Empty;
+            if (item.SenderId == currentUserId)
+            {
+                mStyle = "my-message";
+            }
+            else
+            {
+                mStyle = "interlocutor-message";
+            }
+
+            <div class='dialog-message @mStyle'>
+                <p>@item.Text</p>
+                <span class='dialog-message__datetime'>@item.Date.ToString("dd.MM.yyyy HH:mm")</span>
+            </div>
+
+            JS.InvokeVoidAsync("scrollChatToBottom");
+        }
+</div>
+<div class='dialog-send-message'>
+    <input type="text" class='message-area' @bind="MessageText">
+    <input type="submit" class='send-message-button' @onclick="() => SendMessageAsync()" value=" ">
+</div>
+@code {
+    public HubConnection Connection { get; set; }
+
+    [Parameter]
+    public long AdvertisementId { get; set; }
+
+    [Parameter]
+    public string? InterlocutorId { get; set; }
+
+    public ApplicationUser Name { get; set; }
+
+    public List<Message>? Messages { get; set; }
+
+    private string? currentUserId;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        var authstate = GetAuthenticationStateAsync.GetAuthenticationStateAsync().Result;
+        var user = authstate.User;
+        currentUserId = UserManager.GetUserId(user);
+        
+        Messages = MessageService.GetMessages(currentUserId, InterlocutorId, AdvertisementId).ToList();
+
+        string url = navigationManager.BaseUri + "chat";
+        Connection = new HubConnectionBuilder().WithUrl(url, transports: HttpTransportType.WebSockets).Build();
+        Connection.On<string, string>("Send", BroadcastMessage);
+        Connection.StartAsync();
+        Connection.SendAsync("Register", currentUserId);
+        JS.InvokeVoidAsync("scrollChatToBottom");
+    }
+    
+    // получение сообщений
+    private async Task BroadcastMessage(string sender, string message)
+    {
+        Messages.Add(new Message()
+        {
+            Advertisement = MessageService.GetAdvertisement(AdvertisementId),
+            Date = DateTime.Now,
+            SenderId = sender,
+            ReceiverId = currentUserId,
+            Text = message
+        });// MessageService.GetMessages(currentUserId, InterlocutorId, AdvertisementId).ToList();
+        Console.WriteLine(message);
+
+        await InvokeAsync(() => StateHasChanged());
+        await JS.InvokeVoidAsync("scrollChatToBottom");
+    }
+
+    // отправка сообщений
+    private async Task SendMessageAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(MessageText))
+        {
+            await Connection.SendAsync("Send", InterlocutorId, currentUserId, MessageText);
+            MessageService.AddMessage(DateTime.Now, InterlocutorId, currentUserId, MessageText, AdvertisementId);
+            Messages = MessageService.GetMessages(currentUserId, InterlocutorId, AdvertisementId).ToList();
+            MessageText = "";
+            await InvokeAsync(() => StateHasChanged());
+            await JS.InvokeVoidAsync("scrollChatToBottom");
+        }
+    }
+
+    public string? MessageText { get; set; }
+}

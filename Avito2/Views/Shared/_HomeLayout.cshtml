@@ -1,0 +1,67 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Avito2.Users
+@inject SignInManager<ApplicationUser> SignInManager
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/style.css">
+    <title>@ViewData["Title"]</title>
+    <base href="~/" />
+</head>
+<body>
+    <header>
+        <div class='wrapper main-header'>
+            <span class='logotype'>
+                <a asp-action="Index" asp-controller="Home"><img src="~/images/logo.png" /></a>
+            </span>
+            
+            <ul class='header-navigation-list'>
+                @if(SignInManager.IsSignedIn(User))
+                {
+                    @if(User.IsInRole("Moderator"))
+                    {
+                        <li><a asp-action="Advertisements" asp-controller="Moderator">Проверка объявлений</a></li>
+                        <li><a asp-action="Dialogs" asp-controller="Messages">Сообщения</a></li>
+                    }
+                    @if(User.IsInRole("User"))
+                    {
+                        <li><a asp-action="My" asp-controller="Advertisements">Мои объявления</a></li>
+                        <li><a asp-action="Dialogs" asp-controller="Messages">Сообщения</a></li>
+                    }
+                    <li>        
+                        <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                            <button style="margin: 0;" type="submit">Выйти</button>
+                        </form>
+                    </li>
+                    
+                }
+                else
+                {
+                    <li><a asp-area="Identity" asp-page="/Account/Login">Войти</a></li>
+                    <li><a asp-area="Identity" asp-page="/Account/Register">Регистрация</a></li>
+                }
+                <li class='header-navigation-list__create-advertisement'>@Html.ActionLink("Разместить объявление", "Create", "Advertisements")</li>
+            </ul>
+        </div>
+    </header>
+    <main>
+        <div class='wrapper'>
+            @RenderBody()
+        </div>
+    </main>
+    <footer></footer>
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script src="_framework/blazor.server.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

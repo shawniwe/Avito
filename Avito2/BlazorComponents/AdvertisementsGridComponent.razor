@@ -1,0 +1,64 @@
+﻿@using Avito2.BlazorServices
+@using Avito2.Domains
+@inject AdvertisementService AdvertisementService
+@inject NavigationManager NavigationManager
+@inject LinkGenerator LinkGenerator
+
+<div class="modal-wrapper @ShowWrapperClass">
+    <div class="modal-window @ShowModalClass">
+        <div class="modal-controls">
+            <div @onclick="() => CloseModal()" class="modal-control-close"></div>
+        </div>
+        <div class="modal-content"><img src="images/@ExtendedImage" /></div>
+    </div>
+</div>
+
+<h1 class='main-page__header'>Рекомедации для вас</h1>
+<div class='ad-card-list'>
+    @foreach (var item in Advertisements)
+    {
+        <AdvertisementItemComponent AdvertisementId="item.Id" ParentComponent="this"></AdvertisementItemComponent>
+    }
+</div>
+
+@code {
+    public Action<string> OnImageClicked;
+
+    public IEnumerable<Advertisement> Advertisements { get; set; }
+
+    public string ExtendedImage { get; set; }
+
+    public bool ShowBackdrop { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ShowWrapperClass = "";
+        ShowModalClass = "hide-modal";
+        ShowBackdrop = false;
+        Advertisements = AdvertisementService.GetAdvertisements(x => x.Statement.Id == 1);
+        OnImageClicked += OnImageClickedHandler;
+        base.OnInitialized();
+    }
+
+    private void OnImageClickedHandler(string image)
+    {
+        ExtendedImage = image;
+        ShowBackdrop = true;
+        ShowWrapperClass = "show-wrapper";
+        ShowModalClass = "show-modal";
+        StateHasChanged();
+    }
+
+    private void CloseModal()
+    {
+        ShowWrapperClass = "";
+        ShowModalClass = "hide-modal";
+        ShowBackdrop = false;
+        StateHasChanged();
+    }
+
+    public string ShowWrapperClass { get; set; }
+
+    public string ShowModalClass { get; set; }
+
+}

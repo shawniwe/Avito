@@ -1,0 +1,74 @@
+﻿@using Avito2.BlazorServices
+@inject AdvertisementService AdvertisementService
+
+<div class="modal-wrapper @ShowWrapperClass">
+    <div class="modal-window @ShowModalClass">
+        <div class="modal-controls">
+            <div @onclick="() => CloseModal()" class="modal-control-close"></div>
+        </div>
+        <div class="modal-content"><img src="images/@SelectedImage" /></div>
+    </div>
+</div>
+
+<img @onclick="() => OpenSelectedImage()" src="/images/@SelectedImage">
+<div class="other-images">
+    @foreach (var image in ImagesList)
+    {
+        <img @onclick="() => SelectImage(image)" class="image-miniature-item" src="/images/@image"/>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public long? AdvertisementId { get; set; }
+
+    public IEnumerable<string> ImagesList { get; set; }
+
+    public string SelectedImage { get; set; }
+
+    public string ShowWrapperClass { get; set; }
+
+    public string ShowModalClass { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ShowWrapperClass = "";
+        ShowModalClass = "hide-modal";
+
+        if (AdvertisementId != null)
+        {
+            var ad = AdvertisementService.GetAdvertisements(x => x.Id == AdvertisementId).FirstOrDefault();
+
+            if (ad.Photos.Any())
+            {
+                ImagesList = ad.Photos.Select(x => x.FilePath);
+            }
+        }
+        if (ImagesList.Any())
+        {
+            SelectedImage = ImagesList.FirstOrDefault();
+        }
+        base.OnInitialized();
+    }
+    
+    private void SelectImage(string image)
+    {
+        SelectedImage = image;
+        StateHasChanged();
+    }
+
+    private void OpenSelectedImage()
+    {
+        ShowWrapperClass = "show-wrapper";
+        ShowModalClass = "show-modal";
+        StateHasChanged();
+    }
+
+    private void CloseModal()
+    {
+        ShowWrapperClass = "";
+        ShowModalClass = "hide-modal";
+        StateHasChanged();
+    }
+
+}

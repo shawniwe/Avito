@@ -1,0 +1,95 @@
+﻿@model Avito2.Models.AdInfoModel
+@inject UserManager<ApplicationUser> UserManager
+@using System.Text.Json
+@using Avito2.BlazorComponents
+@using Avito2.Users
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    int grade = @Model.SelectedGrade;
+    string pathAndQuery =
+            Context.Request.Path +
+            Context.Request.QueryString;
+    var currentUser = UserManager.GetUserAsync(User).Result;
+    ViewData["Title"] = Model.Advertisement.Title;
+    var hidden = (Model.Advertisement.Statement.Name != "Активно");
+
+    string statusClass = string.Empty;
+    if (Model.Advertisement.Statement.Name == "На модерации")
+    {
+        statusClass = "yellow-alert";
+    }
+    if (Model.Advertisement.Statement.Name == "Отклонено" || Model.Advertisement.Statement.Name == "Снято с публикации")
+    {
+        statusClass = "red-alert";
+    }
+}
+<div class='ad-content'>
+    @if(hidden)
+    {
+        <p class='ad-current-status @statusClass'>@Model.Advertisement.Statement.Name</p>
+    }
+    <div class='ad-top-content'>
+        <h1 class='ad-content__header'>@ViewData["Title"]</h1>
+        <span class='ad-category'>@Model.Advertisement.Category.Title</span>
+        @if(Model.CanEdit)
+        {
+            <a asp-action="Edit" asp-controller="Advertisements" asp-route-id="@Model.Advertisement.Id">
+                <img class='edit-button icon16' src="~/images/pen.png"/>
+            </a>
+            <a asp-action="Delete" asp-controller="Advertisements" asp-route-id="@Model.Advertisement.Id">
+                <img class='edit-button icon16' src="~/images/cancel.png" />
+            </a>
+        }
+    </div>
+    <span class='ad-card__date'>Объявление опубликовано @Model.Advertisement.PlacementDate.ToString("dd.MM.yyyy HH:mm")</span>
+    <div class='ad-content__top-panel @(hidden ? "hidden-ad" : "")'>
+        <div class='ad-content__slider'>
+            @await(Html.RenderComponentAsync<AdvertisementImagesComponent>(RenderMode.ServerPrerendered, new { AdvertisementId = Model.Advertisement.Id }))
+        </div>
+        <div class='ad-content__right-panel'>
+            <div class='ad-info'>
+                <span class='ad-card__price'>@Model.Advertisement.Price.ToString("C")</span>
+                @if (UserManager.GetUserAsync(User).Result != null && UserManager.GetUserAsync(User).Result.Id != @Model.Advertisement.CreationAuthorId)
+                {
+                    <div class='ad-author__button'>
+                        <a asp-action="Dialog" asp-controller="Messages" asp-route-interlocutor="@Model.CreationAuthor.Id" asp-route-advertisement="@Model.Advertisement.Id" class='seller_button'>Связаться с продавцом</a>
+                    </div>
+                }
+                <div class='ad-author'>
+                    <div class='ad-author__info'>
+                        <div class='ad-author-name-and-rate'>
+                            <p>@Model.CreationAuthor.FullName</p>
+                            <span class='ad-author-rate'>
+                                <img src="~/images/starsmall.png" />
+                                @Model.AverageGrade.ToString("0.00")
+                            </span>
+                           @* @if (UserManager.GetUserAsync(User).Result != null && UserManager.GetUserAsync(User).Result.Id != @Model.Advertisement.CreationAuthorId)
+                            {
+                                <div class='ad-set-rate'>
+                                    <form asp-route-grade="@grade" asp-route-targetUser="@Model.CreationAuthor.Id" asp-route-sourceUser="@currentUser.Id" asp-route-backUrl="@pathAndQuery" asp-action="Set" asp-controller="Rate">
+                                        <select asp-for="@grade" asp-items="@Model.Grades">
+                                        </select>
+                                        <input type="submit" value="Установить" />
+                                    </form>
+                                </div>
+                            }*@
+                        </div>
+                        <span>На авито с @Model.CreationAuthor.RegistrationDate.ToShortDateString()</span>
+                    </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="ad-row">
+        <div class='ad-content__right-panel-item'>
+            <p>Адрес</p>
+            <p>@Model.Advertisement.Address</p>
+        </div>
+        <div class='ad-content__right-panel-item'>
+            <p>Описание</p>
+            <p>@Model.Advertisement.Description</p>
+        </div>
+    </div>
+</div>

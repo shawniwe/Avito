@@ -1,0 +1,48 @@
+﻿@model Avito2.Models.DialogMessagesModel
+@using Avito2.Abstract
+@using Avito2.BlazorComponents
+@using Avito2.Domains
+@using Avito2.Users
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> userManager
+
+@{
+    var currentUser = userManager.GetUserAsync(User).Result;
+    var message = string.Empty;
+    ViewData["Title"] = @Model.InterlocutorName;
+}
+
+<div class='dialog-container'>
+    <div class='dialog-window'>
+        <div class='dialog-window__header'>
+            <h1 class='interlocutor-name'>@Model.InterlocutorName</h1>
+            <h1 class='interlocutor-average-rate'>
+                <img src="~/images/starlarge.png"/>
+                @Model.AverageGrade
+            </h1>
+        </div>
+        <div class='dialog-item'>
+            <div class='ad-card'>
+                <img src='~/images/@Model.Advertisement.Photos.FirstOrDefault().FilePath'>
+                <div class='ad-card__content'>
+                    <h2 class='ad-card__header'>@Html.ActionLink(Model.Advertisement.Title, "Info", "Advertisements", new { id = Model.Advertisement.Id })</h2>
+                    <span class='ad-card__price'>@Model.Advertisement.Price.ToString("C")</span>
+                </div>
+            </div>
+        </div>
+        
+    @await (Html.RenderComponentAsync<ChatComponent>(RenderMode.ServerPrerendered, new { InterlocutorId = Model.InterlocutorId, AdvertisementId = Model.Advertisement.Id }))
+    </div>
+</div>
+<script>
+    document.onload = function () {
+        let scrollable = document.querySelector('.dialog-window__messages');
+        console.log(scrollable.scrollHeight);
+        scrollable.scrollTop = scrollable.scrollHeight;
+    }
+    window.scrollChatToBottom = () => {
+        let scrollable = document.querySelector('.dialog-window__messages');
+        console.log(scrollable.scrollHeight);
+        scrollable.scrollTop = scrollable.scrollHeight;
+    }
+</script>

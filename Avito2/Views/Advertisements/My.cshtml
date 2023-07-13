@@ -1,0 +1,20 @@
+﻿@model IEnumerable<Avito2.Domains.Advertisement>
+
+@{
+    ViewData["Title"] = "Мои объявления";
+}
+
+<div class='search-result__list'>
+    <h2>@ViewData["Title"]</h2>
+    <div class='ad-card-list'>
+        @foreach (var item in Model) {
+            <div class='ad-card'>
+                <img src='~/images/@(item.Photos.FirstOrDefault() == null ? "" : item.Photos.FirstOrDefault().FilePath)'>
+                <p class='ad-card__header'>@Html.ActionLink(item.Title, "Info", "Advertisements", new { id=item.Id })</p>
+                <span class='ad-card__price'>@item.Price.ToString("C")</span>
+                <span class='ad-card__date'>@item.PlacementDate.ToString("dd.MM.yyyy HH:mm")</span>
+                <span class='ad-card__status'>Статус: @item.Statement.Name</span>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,171 @@
+﻿@using Avito2.Models;
+@using Avito2.Abstract
+@using Avito2.BlazorServices
+@using Avito2.Data.Repositories
+@using Avito2.Domains
+@using Avito2.Users
+@using System.Reflection.PortableExecutable
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.Formatters
+@inject IRepository<Category> CategoriesRepository
+@inject IRepository<Advertisement> AdvertisementRepository
+@inject UserManager<ApplicationUser> UserManager
+@inject AdvertisementService AdvertisementService
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject NavigationManager NavigationManager    
+
+<div class="edit-ad-columns">
+        <div class="edit-ad-column">
+            <div class="edit-ad__image">
+            <span style="@(!string.IsNullOrWhiteSpace(SelectedImage) ? "display: none;" : "")" class="edit-ad__image-info">Здесь будут отображаться загруженные вами фотографии</span>
+                <img style="@(string.IsNullOrWhiteSpace(SelectedImage) ? "display: none;" : "")" src="@SelectedImage"/>
+            </div>
+            <div class="loaded-images__list">
+                @foreach (var image in ImagesList)
+                {   
+                    <div class="loaded-image__item">
+                        <img @onclick="() => DeleteImage(image)" class="delete-image-button" src="/images/delete.png">
+                        <img @onclick="() => SelectImage(image)" class="image-preview" src="@image"/>
+                    </div>
+                }
+            </div>
+            @*<input value="@AdModel.ImagesFiles" multiple />*@
+            <InputFile OnChange="ImageLoaded" type="file" />
+        </div>
+        <div class="edit-ad-column">
+            <div>
+                <input type="hidden" bind="@AdModel.ImagesFiles" multiple />
+                <div asp-validation-summary="AdModelOnly" class="text-danger"></div>
+                <div class="edit-ad__group">
+                    <label class="control-label">Название</label>
+                    <input @bind="@AdModel.Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+                <div class="edit-ad__group">
+                    <label class="control-label">Описание</label>
+                    <textarea @bind="@AdModel.Description" class="form-control">@AdModel.Description</textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+                <div class="edit-ad__group">
+                    <label class="control-label">Стоимость</label>
+                    <input @bind="@AdModel.Price" class="form-control"/>
+                    <span asp-validation-for="Price" class="text-danger"></span>
+                </div>
+                <div class="edit-ad__group">
+                    <label class="control-label">Город</label>
+                    <input @bind="@AdModel.City" class="form-control"/>
+                    <span asp-validation-for="City" class="text-danger"></span>
+                </div>
+                <div class="edit-ad__group">
+                    <label>Адрес</label>
+                    <input @bind="@AdModel.Address" class="form-control"/>
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+                <div class="edit-ad__group">
+                    <label class="control-label">Категория:</label>
+                    <select @bind="@AdModel.Category">
+                            @foreach (var item in @AdModel.Categories)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                    </select>
+                </div>
+                <div class="edit-ad__group">
+                <a @onclick="CreateOrUpdateAdvertisement" class="edit-ad__save-button">Разместить объявление</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@code {
+    [Parameter]
+    public long? Id { get; set; }
+
+    public AdEditModel AdModel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (AdModel == null)
+        {
+            AdModel = new AdEditModel(CategoriesRepository.ReadList().ToList());
+            AdModel.Category = CategoriesRepository.ReadList().FirstOrDefault().Id;
+            ImagesList = new List<string>();
+        }
+
+        if (Id != null)
+        {
+            var entry = AdvertisementRepository.ReadList().FirstOrDefault(x => x.Id == Id);
+            AdModel = new AdEditModel(CategoriesRepository.ReadList().ToList())
+            {
+                Id = entry.Id,
+                Category = entry.Category.Id,
+                Address = entry.Address,
+                City = entry.City,
+                CreationAuthor = UserManager.Users.FirstOrDefault(x => x.Id == entry.CreationAuthorId),
+                Description = entry.Description,
+                Title = entry.Title,
+                Price = entry.Price,
+                PlacementDate = entry.PlacementDate,
+                Photos = entry.Photos
+            };
+            ImagesList = AdModel.Photos.Select(x => "images/" + x.FilePath).ToList();
+            SelectedImage = ImagesList.FirstOrDefault();
+        }
+           
+        base.OnInitialized();
+    }
+
+    public List<string>? ImagesList { get; set; }
+
+    private async Task ImageLoaded(InputFileChangeEventArgs obj)
+    {
+        var image = await obj.File.RequestImageFileAsync("image/png", 600, 600);
+
+        using Stream imageStream = image.OpenReadStream(1024 * 1024 * 10);
+        using MemoryStream ms = new();
+        await imageStream.CopyToAsync(ms);
+        string imageStr = $"data:image/png;base64,{Convert.ToBase64String(ms.ToArray())}";
+        ImagesList.Add(imageStr);
+        SelectedImage = imageStr;
+        StateHasChanged();
+    }
+
+    private void DeleteImage(string image)
+    {
+        if (Id != null && !image.Contains("base64")) AdvertisementService.DeletePhoto(image.Replace("images/", ""));
+        int index = ImagesList.IndexOf(image);
+        ImagesList.Remove(image);
+        if (index - 1 >= 0) SelectedImage = ImagesList[index - 1];
+        else SelectedImage = ImagesList.LastOrDefault() ?? "";
+        StateHasChanged();
+    }
+
+    public string? SelectedImage { get; set; }
+
+    private void SelectImage(string image)
+    {
+        SelectedImage = image;
+    }
+
+    private void CreateOrUpdateAdvertisement()
+    {
+        if (Id == null)
+        {
+            var authstate = GetAuthenticationStateAsync.GetAuthenticationStateAsync().Result;
+            var userId = authstate.User.Claims.FirstOrDefault().Value;
+            var resultId = AdvertisementService.CreateAdvertisement(AdModel, ImagesList, userId);
+            if (resultId != null)
+            {
+                NavigationManager.NavigateTo("/Advertisements/Info?id=" + resultId, replace: true, forceLoad: true);
+            }
+        }
+        else
+        {
+            var resultId = AdvertisementService.UpdateAdvertisement(AdModel, ImagesList);
+            if (resultId != null)
+            {
+                NavigationManager.NavigateTo("/Advertisements/Info?id=" + resultId, replace: true, forceLoad: true);
+            }
+        }
+    }
+}

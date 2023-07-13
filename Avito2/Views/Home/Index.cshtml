@@ -1,0 +1,12 @@
+﻿@using Avito2.BlazorComponents
+@model IEnumerable<Avito2.Domains.Advertisement>
+
+@{
+    ViewData["Title"] = "Главная страница";
+}
+
+@await Component.InvokeAsync("Search")
+@await(Html.RenderComponentAsync<AdvertisementsGridComponent>(RenderMode.ServerPrerendered))
+@* @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
+                @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
+                @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })*@

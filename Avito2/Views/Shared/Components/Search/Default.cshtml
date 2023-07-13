@@ -1,0 +1,11 @@
+﻿@model Avito2.Models.SearchQueryModel
+
+
+<form class='search-component' asp-action="List" asp-controller="Advertisements">
+    <div class='search-component__categories-filter'>
+        <select asp-for="CategoryId" asp-items="@Model.Categories">
+        </select>
+    </div>
+    <input type="text" placeholder="Напишите что-нибудь.." asp-for="@Model.Query"/>
+    <input value="Поиск" class='search-component__button' type="submit"/>
+</form>

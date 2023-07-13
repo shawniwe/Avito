@@ -1,0 +1,53 @@
+﻿@using Avito2.Users
+@using Microsoft.AspNetCore.Identity;
+@model IEnumerable<Avito2.Models.DialogItemModel>
+@inject UserManager<ApplicationUser> userManager
+
+@{
+    ViewData["Title"] = "Сообщения";
+    var currentUserId = userManager.GetUserId(User);
+}
+
+<div class='dialogs-container'>
+    <h2>@ViewData["Title"]</h2>
+    @foreach (var item in Model)
+    {
+            <div class='dialog-item' onclick="redirectToDialog('@item.Advertisement.Id', '@item.InterlocutorId')">
+                <div class='ad-card'>
+                <img src='~/images/@item.Advertisement.Photos.FirstOrDefault().FilePath'>
+                    <div class='ad-card__content'>
+                        <div class='dialog-item__user'>
+                            <span class='dialog-item__username'>@item.InterlocutorName</span>
+                        <div class='ad-author-name-and-rate'>
+                            <span class='ad-author-rate'>
+                                <img src="~/images/starsmall.png" />
+                                @item.AverageRate.ToString("0.00")
+                            </span>
+                        </div>
+                        </div>
+                        <h2 class='ad-card__header'>@Html.ActionLink(item.Advertisement.Title, "Info", "Advertisements", new { id=item.Advertisement.Id })</h2>
+                        <span class='ad-card__price'>@item.Advertisement.Price.ToString("C")</span>
+                        <div class="last-message">
+                            <div class='dialog-message @(item.LastMessage.SenderId == currentUserId ? "my-message" : "interlocutor-message")'>
+                                <p>@item.LastMessage.Text</p>
+                                <span class='dialog-message__datetime'>@item.LastMessage.Date.ToString("dd.MM.yyyy HH:mm")</span>
+                            </div>
+                       </div>
+                    </div>
+                    @*
+                    <div class='dialog-item-button'>
+                        <a asp-action="Dialog" asp-controller="Messages" asp-route-advertisement="@item.Advertisement.Id" asp-route-interlocutor='@item.InterlocutorId'>
+                            <img src="~/images/arrow.png">
+                        </a>
+                    </div>
+                    *@
+                </div>
+            </div>
+    }
+</div>
+
+<script>
+    function redirectToDialog(ad, interloc) {
+        window.location.href = '@Url.ActionLink("Dialog", "Messages")?advertisement=' + ad + '&interlocutor=' + interloc;
+    }
+</script>

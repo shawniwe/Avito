@@ -1,0 +1,46 @@
+﻿@model Avito2.Models.AdModeratorModel
+
+@{
+    ViewData["Title"] = "Проверка объявления";
+}
+<form method="post" asp-action="Edit" asp-controller="Moderator">
+    <p class='ad-current-status edit-status'>
+        <select asp-for="StatementId"
+                asp-items="Model.Statements">
+        </select>
+    <input type="submit" value="Сохранить" class="btn btn-primary" />
+    </p>
+    <div class='ad-content'>
+        <div class='ad-top-content'>
+            <h1 class='ad-content__header'>@Model.Title</h1>
+            <span class='ad-category'>@Model.Category.Title</span>
+        </div>
+        <span class='ad-city'>г. @Model.City</span>
+        <span class='ad-card__date'>Объявление опубликовано @Model.PlacementDate.ToString("dd.MM.yyyy HH:mm")</span>
+        <div class='ad-content__top-panel'>
+            <img src='~/images/@Model.Photos.First().FilePath'>
+            <div class='ad-content__right-panel'>
+                <div class='ad-info'>
+                    <span class='ad-card__price'>@Model.Price.ToString("C")</span>
+                    <div class='ad-content__right-panel-item'>
+                        <h2>Адрес</h2>
+                        <p>@Model.Address</p>
+                    </div>
+                    <div class='ad-content__right-panel-item'>
+                        <h2>Описание</h2>
+                        <p>@Model.Description</p>
+                    </div>
+                </div>
+                <div class='ad-author'>
+                    <div class='ad-author__info'>
+                        <p>@Model.CreationAuthor.FullName</p>
+                        <span>На авито с @Model.CreationAuthor.RegistrationDate.ToShortDateString()</span>
+                    </div>
+                    <div class='ad-author__button'>
+                        <a class='seller_button'>Связаться с продавцом</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

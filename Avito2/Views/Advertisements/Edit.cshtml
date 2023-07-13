@@ -1,0 +1,15 @@
+﻿@using Avito2.BlazorComponents
+@model Avito2.Models.AdEditModel
+
+@{
+    ViewData["Title"] = "Редактирование объявления";
+}
+
+<div class='edit-ad-container'>
+    <h2 class='edit-ad-header'>@ViewData["Title"]</h2>
+    @await(Html.RenderComponentAsync<CreateAdvertisementComponent>(RenderMode.ServerPrerendered, new { Id = Model.Id }))
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

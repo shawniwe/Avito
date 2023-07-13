@@ -1,0 +1,24 @@
+﻿@model Avito2.Models.AdSearchResultModel
+
+@{
+    ViewData["Title"] = "Результаты поиска по запросу \"" + Model.Query + "\":";
+}
+
+<div class='search-result'>
+    <h2>@ViewData["Title"]</h2>
+    <div class='search-result__list'>
+        @foreach(var item in Model.Advertisements)
+        {
+            <div class='ad-card search-item'>
+                <img src='~/images/@item.Advertisement.Photos.FirstOrDefault().FilePath'>
+                <div class='ad-card__content'>
+                    <h2 class='ad-card__header'>@Html.ActionLink(item.Advertisement.Title, "Info", "Advertisements", new { id=item.Advertisement.Id })</h2>
+                    <span class='ad-card__price'>@item.Advertisement.Price.ToString("C")</span>
+                    <span class='ad-card__address'>@item.Advertisement.Description</span>
+                    <span class='ad-card__address'>@item.Advertisement.Address</span>
+                    <span class='ad-card__date'>@item.Advertisement.PlacementDate.ToString("dd.MM.yyyy HH:mm")</span>
+                </div>
+            </div>
+        }
+    </div>
+</div>

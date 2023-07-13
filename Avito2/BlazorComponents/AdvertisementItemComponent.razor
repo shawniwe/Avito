@@ -1,0 +1,57 @@
+﻿@using Avito2.Domains
+@using Avito2.BlazorServices
+@inject AdvertisementService AdvertisementService
+@inject LinkGenerator LinkGenerator
+
+<div class='ad-card'>
+    <img src='/images/@(SelectedImage)' @onclick="() => ImageClick()">
+    <div class="other-images">
+        @foreach (var image in Advertisement.Photos)
+        {
+            <img @onmouseout="() => UnhoverImage()" @onmouseover="() => HoverImage(image.FilePath)" @onclick="() => ParentComponent.OnImageClicked?.Invoke(image.FilePath)" class="image-miniature-item" src="/images/@image.FilePath"/>
+        }
+    </div>
+    <p class='ad-card__header'>
+        <a href="@LinkGenerator.GetPathByAction(action: "Info", controller: "Advertisements", new { id = Advertisement.Id })">@Advertisement.Title</a>
+        @*@Html.ActionLink(item.Title, "Info", "Advertisements", new { id = item.Id })*@
+    </p>
+    <span class='ad-card__price'>@Advertisement.Price.ToString("C")</span>
+    <span class='ad-card__address'>@Advertisement.City</span>
+    <span class='ad-card__date'>@Advertisement.PlacementDate.ToString("dd.MM.yyyy HH:mm")</span>
+</div>
+
+@code {
+    [Parameter]
+    public long? AdvertisementId { get; set; }
+    [Parameter]
+    public AdvertisementsGridComponent ParentComponent { get; set; }
+
+    public Advertisement Advertisement { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Advertisement = AdvertisementService.GetAdvertisements(x => x.Id == AdvertisementId).FirstOrDefault();
+        SelectedImage = Advertisement.Photos.FirstOrDefault().FilePath;
+        base.OnInitialized();
+    }
+
+    public string? SelectedImage { get; set; }
+
+    private void ImageClick()
+    {
+        ParentComponent.OnImageClicked.Invoke(SelectedImage);
+    }
+
+    private string tempImage;
+    private void HoverImage(string image)
+    {
+        tempImage = SelectedImage;
+        SelectedImage = image;
+    }
+
+    private void UnhoverImage()
+    {
+        SelectedImage = tempImage;
+    }
+
+}
